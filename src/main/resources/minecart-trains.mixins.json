@@ -3,6 +3,8 @@
 	"package": "de.larsensmods.mctrains.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
+		"AbstractMinecartEntityMixin",
+		"EntityTrackerEntryMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
