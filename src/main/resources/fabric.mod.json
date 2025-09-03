@@ -28,7 +28,7 @@
 	"custom": {
 		"loom:injected_interfaces": {
 			"net/minecraft/class_1688": [
-				"de.larsensmods.mctrains.interfaces.IChainable"
+				"de/larsensmods/mctrains/interfaces/IChainable"
 			]
 		}
 	},

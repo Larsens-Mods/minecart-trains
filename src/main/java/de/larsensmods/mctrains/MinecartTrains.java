@@ -1,7 +1,12 @@
 package de.larsensmods.mctrains;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import de.larsensmods.mctrains.config.MCTConfig;
 import de.larsensmods.mctrains.interfaces.IChainable;
 import de.larsensmods.mctrains.networking.ClientboundSyncMinecartTrainPacket;
 import net.fabricmc.api.ModInitializer;
@@ -26,6 +31,7 @@ import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.*;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -34,6 +40,8 @@ public class MinecartTrains implements ModInitializer {
 
 	public static final String MOD_ID = "minecart-trains";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+
+	public static MCTConfig CONFIG;
 
 	public static final ComponentType<UUID> PARENT_ID = ComponentType.<UUID>builder().codec(
 			RecordCodecBuilder.create(uuidInstance -> uuidInstance.group(
@@ -50,6 +58,35 @@ public class MinecartTrains implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+		File configFile = new File("config", "minecart-trains.json");
+		boolean createNewConfig = false;
+		if(configFile.exists()) {
+            try(FileReader reader = new FileReader(configFile)){
+				CONFIG = gson.fromJson(reader, MCTConfig.class);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            } catch (JsonSyntaxException | JsonIOException e) {
+				LOGGER.warn("Error reading config file", e);
+				if(!configFile.renameTo(new File("config", "minecart-trains.json.bak"))){
+					throw new RuntimeException("Couldn't access broken config file, aborting...", e);
+				}
+				createNewConfig = true;
+			}
+        }else{
+			createNewConfig = true;
+		}
+		if(createNewConfig) {
+			CONFIG = new MCTConfig();
+			configFile.getParentFile().mkdirs();
+			try(FileWriter writer = new FileWriter(configFile)) {
+				gson.toJson(CONFIG, writer);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+
 		PayloadTypeRegistry.playS2C().register(ClientboundSyncMinecartTrainPacket.TYPE, ClientboundSyncMinecartTrainPacket.CODEC);
 
 		Registry.register(Registries.DATA_COMPONENT_TYPE, Identifier.of(MOD_ID, "parent_id"), PARENT_ID);
@@ -58,7 +95,7 @@ public class MinecartTrains implements ModInitializer {
 			if(entity instanceof AbstractMinecartEntity cart) {
 				ItemStack stack = player.getStackInHand(hand);
 
-				if(player.isSneaking() && stack.isOf(Items.CHAIN)) {
+				if(player.isSneaking() && stack.isOf(Items.CHAIN) && CONFIG.enableCartChaining()) {
 					if(world instanceof ServerWorld server) {
 						UUID uuid = stack.get(PARENT_ID);
 
