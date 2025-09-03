@@ -9,7 +9,7 @@
 	],
 	"contact": {
 		"homepage": "https://larsensmods.de/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"sources": "https://github.com/Larsens-Mods/minecart-trains"
 	},
 	"license": "GPL-3.0",
 	"icon": "assets/minecart-trains/icon.png",
